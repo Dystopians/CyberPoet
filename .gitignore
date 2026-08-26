@@ -11,4 +11,6 @@ adapters/
 *.pt
 *.zip
 *.log
-标注.html
+
+# 例外：标注页可以入库——里面只有模型生成的诗，与语料的最长逐字重合实测为 0 字
+!labeler/*.html
