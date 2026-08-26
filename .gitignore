@@ -1,0 +1,14 @@
+# 诗歌正文一律不入库：12 位诗人的作品仍在版权期内，本仓库是公开的
+*.jsonl
+*.json
+!package.json
+data/
+corpus/
+outputs/
+adapters/
+*.safetensors
+*.bin
+*.pt
+*.zip
+*.log
+标注.html
