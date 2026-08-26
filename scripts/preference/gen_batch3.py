@@ -21,6 +21,7 @@ ADAPTERS = {
     "pt2":    str(W / "pretrain/outputs/e8/checkpoint-398"),
     "pt_sft": str(W / "sft_repair/outputs/pt_then_sft/checkpoint-710"),
     "cons":   str(R / "v3/outputs/cons/checkpoint-150"),
+    "cons7":  str(R / "v3/outputs/cons7/checkpoint-150"),
 }
 
 ap = argparse.ArgumentParser()
