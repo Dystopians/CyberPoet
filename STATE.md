@@ -67,6 +67,8 @@
 - 清洗产物统一在 `claude_night_20260827/corpus_clean/`，由脚本幂等重建，勿手改。
 - 训练语料 **v5：3734 首 / 971,029 字**（`corpus_clean/pt5_train.json`）。
 - 洛夫双倍行距损坏已修：555 首中 146 首从 PoemWiki 移植回真分节，其余压平。
+- 已接入训练：`cyberpoet_pt5_train` / `cyberpoet_pt5_dev`，配置 `configs/pt5_r32.yaml`。
+- dev 集此前含 54 首受损洛夫，修复后 **eval loss 与 08-27 前的 run 不可比**。
 - `prepare_corpus_v4.py` 已作废——它读未清洗数据、繁转简会转出生僻字，
   且 `pt4_train.json` 从未生成。改用 `prepare_corpus_v5.py`。
 
