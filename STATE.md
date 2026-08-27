@@ -62,6 +62,14 @@
 
 **磁盘**：`/data` 99% 占用；`claude_night_20260827/` 已达 108 G，需清理。
 
+### 语料（08-27 下午重建）
+
+- 清洗产物统一在 `claude_night_20260827/corpus_clean/`，由脚本幂等重建，勿手改。
+- 训练语料 **v5：3734 首 / 971,029 字**（`corpus_clean/pt5_train.json`）。
+- 洛夫双倍行距损坏已修：555 首中 146 首从 PoemWiki 移植回真分节，其余压平。
+- `prepare_corpus_v4.py` 已作废——它读未清洗数据、繁转简会转出生僻字，
+  且 `pt4_train.json` 从未生成。改用 `prepare_corpus_v5.py`。
+
 ## 四、下一步（主人定完落点后）
 
 1. T2 题目集切换已完成（`vocab_probe/probes_title.jsonl` 40 题 /
@@ -76,6 +84,19 @@
 
 ## 五、并行作业的规矩
 
+- **数据目录的写权是独占的**，清洗产物与爬虫产物绝不写在同一路径：
+  | 目录 | 写权 |
+  |---|---|
+  | `claude_night_20260827/pw_crawl/` | 爬虫窗口（Fable 5） |
+  | `claude_night_20260827/corpus_clean/` | 清洗窗口（Claude） |
+  | `cyberpoet_v1/` | codex |
+  | `cyberpoet_repo/` | Claude |
+- **绝不原地改写**：清洗一律读 A 写 B，不许把结果写回输入文件。
+  （08-27 事故：`audit_apply.py` 把审计结果写回爬虫目录，爬虫一重跑
+  就冲掉了全部审计标记，2753 条白洗一遍。该脚本已废弃。）
+- **清洗只走 `clean_pipeline.py`**，从原始数据幂等重建；爬虫出新数据直接重跑，
+  历史修复规则自动重新应用。不要手工编辑 jsonl 修数据。
+- 详见仓库外的 `CyberPoetTraining/CLAUDE.md`（各窗口自动加载）。
 - **只加新文件，不改对方文件**；产物写明路径与 SHA。
 - 启动即钉卡（`CUDA_VISIBLE_DEVICES`），启动前查占用。
   （08-26 事故：两个会话同时抢 0 号卡导致 OOM。）
