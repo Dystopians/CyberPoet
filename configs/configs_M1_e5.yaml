@@ -1,0 +1,67 @@
+### 在预训练适配器之上，用修好的数据继续微调
+model_name_or_path: models/Qwen3-14B
+adapter_name_or_path: /data/peilincai/CyberPoetTraining/claude_parallel_20260825/pretrain/outputs/e8/checkpoint-995
+create_new_adapter: false
+trust_remote_code: true
+quantization_bit: 4
+quantization_method: bitsandbytes
+quantization_type: nf4
+double_quantization: true
+flash_attn: auto
+
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_parallel_20260825/sft_repair/llamafactory_v3
+dataset: cyberpoet_v3_train
+eval_dataset: cyberpoet_v3_dev
+template: qwen3_nothink
+cutoff_len: 2560
+packing: false
+train_on_prompt: false
+preprocessing_num_workers: 24
+dataloader_num_workers: 4
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_parallel_20260825/sft_repair/outputs/M1_e5_open
+logging_steps: 10
+save_strategy: steps
+save_steps: 50
+eval_steps: 50
+save_total_limit: 8
+plot_loss: true
+overwrite_output_dir: false
+save_only_model: true
+report_to: wandb
+run_name: cyberpoet-M1-e5-open
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-5
+num_train_epochs: 2.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+weight_decay: 0.01
+max_grad_norm: 1.0
+include_num_input_tokens_seen: true
+include_tokens_per_second: true
+logging_nan_inf_filter: false
+seed: 20260825
+data_seed: 20260825
+ddp_timeout: 180000000
+resume_from_checkpoint: null
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+load_best_model_at_end: false
