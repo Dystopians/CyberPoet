@@ -97,15 +97,20 @@
 **磁盘**：`/data` 97%，剩 1.1T。`claude_night_20260827/` 53 G、`cyberpoet_v1/` 75 G。
 其中 `outputs/pt2_full` 占 28 G——全参路线已关闭，可删，但那是 codex 的地盘。
 
-### 语料（08-27 下午重建）
+### 语料（08-28 · v6 定稿）
 
 - 清洗产物统一在 `claude_night_20260827/corpus_clean/`，由脚本幂等重建，勿手改。
-- 训练语料 **v5：3734 首 / 971,029 字**（`corpus_clean/pt5_train.json`）。
-- 洛夫双倍行距损坏已修：555 首中 146 首从 PoemWiki 移植回真分节，其余压平。
-- 已接入训练：`cyberpoet_pt5_train` / `cyberpoet_pt5_dev`，配置 `configs/pt5_r32.yaml`。
-- dev 集此前含 54 首受损洛夫，修复后 **eval loss 与 08-27 前的 run 不可比**。
-- `prepare_corpus_v4.py` 已作废——它读未清洗数据、繁转简会转出生僻字，
-  且 `pt4_train.json` 从未生成。改用 `prepare_corpus_v5.py`。
+- **pt6_train_full：6399 条 / 1,576,184 字**（外译占 25.0%，规范上限）
+  **pt6_anneal_zh：4581 条 / 1,182,155 字**（仅中文原创，末轮退火用）
+- 已注册 `cyberpoet_pt6_full` / `cyberpoet_pt6_anneal`；dev 冻结复用 `cyberpoet_pt5_dev`。
+- 63 位诗人 / 5060 首（清洗后）。散文 25 篇另存 `corpus_clean/nonpoetry/`。
+- 逐首阅读查出并修复 14 类问题（散文混入、柏桦考据尾注、「著」当「着」、
+  乾隆被简成干隆、外国诗漏记译者绕过外译上限、穆旦名下错挂奥登、整首印两遍、
+  换行符丢失、长度上下限误杀经典短诗与长诗等），详见 `docs/17-清洗报告_delta2.md`。
+- 另有 10 类扫描报警经逐条查看确认是原作面貌，一律保留（首行=标题 200 条、
+  故意的短尾行 71 条、昌耀叠句 37 条、许立志的现成品诗、妳/牠/祂 等旧字形）。
+- 管线：`clean_pipeline_v2.py`（只读 pw_crawl → 只写 corpus_clean）
+  → `prepare_corpus_v6.py` → `gen_report_delta2.py`。幂等，爬虫出新数据直接重跑。
 
 ## 四、下一步（主人定完落点后）
 
