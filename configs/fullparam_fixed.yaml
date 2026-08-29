@@ -1,0 +1,87 @@
+### 全参重开修正版模板（2026-08-29 尸检后定稿；重开触发条件见 STATE.md「暂缓的路线」）
+### 依据：docs/证据链/11-全参失败根因尸检.md（含 §七 机制精修——以装机源码为准）。
+###
+### 事故三指纹：79.6% 参数逐比特未变 / 幸存更新恰=1 bf16 ULP / 零变化悬崖精确在 |w|=2^-7。
+###
+### 真实机制（badam 1.4 + LLaMA-Factory 0.9.5 源码核实）：
+###   1) BAdam 本来就为活动块维护 fp32 主副本，Adam 数学全程 fp32（block_optim.py:515,522）；
+###   2) 但每 badam_switch_interval 个优化步切块一次：fp32 进展被舍入写回 bf16、
+###      fp32 副本按舍入后的 bf16 重建、Adam 动量整体清零（block_optim.py:435,515）。
+###      旧配置 interval=2 → 每任期只有 2 个 Adam 步，累积更新 ~2e-5，
+###      过不了典型权重的写回舍入门槛（半 ULP：1.5e-5@|w|≥2^-7，3.05e-5@|w|~0.02），
+###      于是 fp32 进展每 2 步被归零一次，7 个 epoch 推了 287 次石头上山；
+###   3) 【重要】删 pure_bf16 不是修复：use_badam=true 时 LLaMA-Factory 强制权重保持
+###      半精度（adapter.py:319 `pure_bf16 or use_badam`），换成 bf16: true 行为不变。
+###      真正的杠杆是 switch_interval（fp32 累积窗口长度）与 learning_rate（过槛幅度）。
+###
+### 重开前自检（强制，出厂检第一项）：训练 ≥50 步后对 checkpoint 跑
+### scripts/weigh_fullparam.py 权重差分——零变化率 >50% 立即报警停链。
+model_name_or_path: models/Qwen3-14B
+trust_remote_code: true
+flash_attn: auto
+enable_liger_kernel: true
+
+stage: pt
+do_train: true
+finetuning_type: full
+use_badam: true
+badam_mode: layer
+badam_switch_mode: ascending
+# 主修复：任期从 2 步提到 8 步。fp32 累积 ≈ √8×3e-5 ≈ 8.5e-5（同向可达 2.4e-4），
+# 稳过半 ULP 门槛 3.05e-5(|w|~0.02)；Adam 动量也真正走出偏差修正期。
+# 上限约束：40 块 × interval ≤ 总优化步数 ÷ 2（每层至少扫两遍）。
+# 158 万字 ≈ 574 步 → 8 已是上限；语料 ≥400 万字（≈1450 步）可升到 16。
+badam_switch_interval: 8
+badam_verbose: 0
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: <重开时填当代语料>
+eval_dataset: cyberpoet_pt5_dev   # dev 冻结，跨代可比
+template: qwen3_nothink
+cutoff_len: 2048
+packing: true
+preprocessing_num_workers: 24
+overwrite_cache: true
+
+output_dir: <重开时填>
+logging_steps: 5
+# 05-维护手册裁决：长作业禁 epoch 存档（08-25 双卡同崩事故）
+save_strategy: steps
+save_steps: 50
+save_total_limit: 6
+save_only_model: true
+plot_loss: true
+report_to: wandb
+run_name: cyberpoet-fullparam-fixed
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+# 次修复：单步 3e-5 ≈ 1 ULP@|w|~0.02，两步同向即过槛；配合 interval=8 余量 ~6×。
+learning_rate: 3.0e-5
+num_train_epochs: 7.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+# 保留 pure_bf16（见上：删了也不会得到 fp32 权重，14B fp32=59GB 单张 48G 卡也装不下；
+# 保留可免 autocast 开销。修复不在这里，在 interval 与 lr）。
+pure_bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+weight_decay: 0.01
+max_grad_norm: 1.0
+seed: 20260825
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+eval_steps: 50
+load_best_model_at_end: false
+
+### 遗留缺口（yaml 解决不了，重开时需一并处理）：
+### lm_head / embed_tokens / model.norm 不在 BAdam layer 模式的块划分里（尸检证据 4：
+### 三者 100% 冻结）。badam 1.4 的 BlockOptimizer 支持 include_embedding/include_lm_head
+### 参数，但 LLaMA-Factory 0.9.5 没有暴露成 yaml 项（trainer_utils.py:436 处按默认 False
+### 实例化）。重开时二选一：
+###   a) 请 codex 在 vendor/LLaMA-Factory/src/llamafactory/train/trainer_utils.py:436
+###      的 BlockOptimizer(...) 调用里加 include_embedding=True, include_lm_head=True（一行）；
+###   b) 或接受输出头不动，靠后段 LoRA（含 lm_head 目标模块）补输出头适配——需另行验证。
