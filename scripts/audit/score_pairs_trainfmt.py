@@ -1,5 +1,4 @@
-"""【09-16 复核发现的缺陷】本脚本第 20 行用 HF 模板（apply_chat_template, enable_thinking=False，带空 think 块），与训练格式（qwen3_nothink，无 think 块）差 4 个 token，裸底座对其敏感，算出的开局差距偏大两三成。真值请用 score_pairs_trainfmt.py。逻辑未改，留作原实验的可复现件。
-实验 A：DPO 参考模型偏移。对 dpo_v1 (290) / v4 新增 (194) / v5 新增 (99) 每对，
+"""实验 A：DPO 参考模型偏移。对 dpo_v1 (290) / v4 新增 (194) / v5 新增 (99) 每对，
 在 策略初始(桥) 与 LLaMA-Factory 实际参考(禁用 adapter = 裸底座) 下算响应对数似然，
 得到初始 margin 与梯度权重 σ(-m)。输出 jsonl。"""
 import json, re, sys, torch, math
@@ -18,7 +17,8 @@ basep=BASE if BASE.startswith('/') else str(R/BASE)
 base=AutoModelForCausalLM.from_pretrained(basep,trust_remote_code=True,torch_dtype=torch.bfloat16,device_map="cuda:0").eval()
 @torch.no_grad()
 def logp(model,system,instr,resp):
-    p=tok.apply_chat_template([{"role":"system","content":system},{"role":"user","content":instr}],tokenize=False,add_generation_prompt=True,enable_thinking=False)
+    # 09-16 复核修正：改用训练格式（LLaMA-Factory qwen3_nothink，无空 think 块）；原脚本用 HF 模板多 4 个 token，裸底座对其敏感
+    p=f"<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{instr}<|im_end|>\n<|im_start|>assistant\n"
     pid=tok(p,add_special_tokens=False)["input_ids"]; rid=tok(resp+"<|im_end|>\n",add_special_tokens=False)["input_ids"]
     ids=torch.tensor([pid+rid],device="cuda:0")
     lg=model(input_ids=ids).logits[0,:-1].float()
