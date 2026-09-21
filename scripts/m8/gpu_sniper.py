@@ -10,6 +10,7 @@ torch.cuda.init(); torch.zeros(1, device="cuda")
 print(f"[{time.strftime('%H:%M:%S')}] 卡 {card} 预热完成，等空余 ≥{need} MiB", flush=True)
 while True:
     if os.path.exists(claim): print("别的卡已占到，退出", flush=True); sys.exit(0)
+    if os.path.exists(rel): print("未占到即被释放（我方任务已直接起跑），退出", flush=True); sys.exit(0)
     free = torch.cuda.mem_get_info()[0] // 2**20
     if free >= need:
         try:

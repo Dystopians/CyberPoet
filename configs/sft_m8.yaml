@@ -43,8 +43,8 @@ plot_loss: true
 report_to: none
 run_name: cyberpoet-sft_m8
 
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 8
+per_device_train_batch_size: 8   # 09-21 07:15：原 1×8 累积；诗很短（token 中位 291、最长 1232），一条一条过时 4 位量化的反量化开销占大头（21 秒/步，全程 6.3 小时）。改成 8 条一批、不累积：每步还是同样 8 条、同样的顺序，损失按 token 平均不变，只是快。
+gradient_accumulation_steps: 1
 learning_rate: 2.0e-5
 num_train_epochs: 2.0
 lr_scheduler_type: cosine
