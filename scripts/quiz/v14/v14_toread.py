@@ -44,7 +44,7 @@ for _round in range(30):   # 选集内互重（两首诗共用 10 字窗）机�
     if not added: break
     json.dump(RC, open('v14_read_codes.json', 'w'), ensure_ascii=False, indent=1)
 # 装配日志里带臂名的行不给我看（防不盲）：只留 OK / 待处理 / 缺额 三类行，并把臂名抹掉
-def blind(l): return re.sub(r"M8sft|M8|M4", "臂", l)
+def blind(l): return re.sub(r"M8sft|M8w|M8|M4", "臂", l)
 for l in lines:
     if l.startswith(("OK", "!!", "  -", "ha 实装")) or "缺额" in l or "Error" in l or "Traceback" in l or "assert" in l.lower(): print(blind(l))
 if not os.path.exists('v14_haaa_final.json'):

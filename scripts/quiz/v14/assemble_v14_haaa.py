@@ -16,7 +16,8 @@ VETO = {tuple(x) for x in RV.get("veto", [])}          # [sid, arm, seed]
 FORCE = {k: tuple(v) for k, v in RV.get("force", {}).items()}   # sid -> (arm,seed) 或 aa: sid|arm -> seed
 
 QUOTA_HA = {"M8": 16, "M4": 8}   # v14：上限，总数 24 尽力
-QUOTA_AA = {"M8vsM4": 36, "M8vsM8sft": 20}
+from v14_arms import DUEL_A, DUEL_B
+QUOTA_AA = {DUEL_A: 36, DUEL_B: 20}
 pairs, log = [], []
 
 _used0 = set(json.load(open('used_bodies.json')))

@@ -50,6 +50,19 @@ done
 [ -z "$CHOSEN" ] && { log "没有一档的字数中位落在 120–300，停下等人看"; exit 1; }
 echo $CHOSEN > $N/m8_dpo_chosen.txt; cp $N/rca_20260905/M8_ck${CHOSEN}_panel_gens.jsonl $Q/M8_panel_gens.jsonl
 log "选定 checkpoint-$CHOSEN"
+# ---- P1b 工作点补丁（训前写死，训练计划第五节第 3 条）：选中的存档训练奖励差 <1.0 时，另取奖励差最接近 2.0 的存档叫 M8w ----
+M8W=$($PY -c "
+import json
+t=json.load(open('$N/m8_dpo_choice.json'))['table']; ch=int('$CHOSEN')
+m={r['step']:r['train_margin_last3'] for r in t}
+print('' if m[ch]>=1.0 else min(m,key=lambda s:abs(m[s]-2.0)))")
+if [ -n "$M8W" ] && [ "$M8W" != "$CHOSEN" ]; then
+  echo $M8W > $N/m8w_step.txt; log "选中的存档奖励差 <1.0 → 加工作点臂 M8w = checkpoint-$M8W"
+  gen $Q/M8w_panel_gens.jsonl $B $N/outputs/dpo_m8/checkpoint-$M8W $Q/m8_titles_panel66.json M8w || exit 1
+  gen $Q/v14_cands_M8w.jsonl  $B $N/outputs/dpo_m8/checkpoint-$M8W $Q/m8_titles_v14.json M8w || exit 1
+else
+  log "选中的存档奖励差 ≥1.0，不设 M8w"
+fi
 # ---- P2 桥的面板 + 两臂 v14 候选 + 关重复罚的复读诊断（48 题，题面不在桥数据 v5 里）----
 gen $Q/M8sft_panel_gens.jsonl $B none $Q/m8_titles_panel66.json M8sft || exit 1
 gen $Q/v14_cands_M8.jsonl    $B $N/outputs/dpo_m8/checkpoint-$CHOSEN $Q/m8_titles_v14.json M8 || exit 1

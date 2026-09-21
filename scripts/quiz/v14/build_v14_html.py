@@ -25,7 +25,8 @@ for i, p in enumerate(pairs):
 ha_pos = collections.Counter("A" if p["A"]["src"] == "human" else "B" for p in pairs if p["kind"] == "ha")
 assert abs(ha_pos["A"] - ha_pos["B"]) <= 2, f"真伪题侧位失衡 {dict(ha_pos)}"
 import collections as _cc
-for duel in ("M8vsM4", "M8vsM8sft"):
+from v14_arms import DUEL_A, DUEL_B, HAS_W
+for duel in (DUEL_A, DUEL_B):
     rows = [p for p in pairs if p.get("duel") == duel]
     a1 = duel.split("vs")[0] + "_dpo"
     lead = sum(1 for p in rows if p["A"].get("model") == a1)
@@ -262,7 +263,7 @@ function result(){
  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(out))));
  const armHtml=`<table><tr><th>AI 臂</th><th>对局</th><th>你选了原作</th><th>AI 反杀</th><th>该臂图灵率</th></tr>${
   Object.entries(haByArm).map(([a,d])=>`<tr><td>${a}</td><td>${d.n}</td><td>${d.hu}</td><td><b>${d.ai}</b></td><td>${d.n?Math.round(d.ai/d.n*100):0}%</td></tr>`).join('')}</table>
-  <div class="small">M8 = 09-21 按溃败反思重训的新臂（新桥 + 参考模型改对的偏好训练 + 你全部机机决定票重组的偏好数据）；M8sft = 同一座新桥、没做偏好训练；M4 = 现役。M8 对 M4 = 新臂能不能过现役；M8 对 M8sft = 修正后的偏好训练到底有没有用。</div>`;
+  <div class="small">__ARM_NOTE__</div>`;
  const stmtHtml=strong.slice(0,3).length?strong.slice(0,3).map(s=>{
   const side=s.v.side==='L'?s.L:s.R, other=s.v.side==='L'?s.R:s.L;
   const win=s.v.side==='L'?s.l:s.r, lose=s.v.side==='L'?s.r:s.l;
@@ -342,6 +343,12 @@ if(PRELOAD){importCode(PRELOAD)}else{start()}
 
 import os
 OUT = os.environ.get('OUT', '诗味测验14_重训卷.html')
+ARM_NOTE = ("M8 = 09-21 按溃败反思重训的新臂（新桥 + 参考模型改对的偏好训练 + 你全部机机决定票重组的偏好数据），存档按留出的验证票选；"
+            "M8w = 同一次偏好训练里训到「工作点」（奖励差 2 左右）的存档；M8sft = 同一座新桥、没做偏好训练；M4 = 现役。"
+            "M8 对 M4 = 新臂能不能过现役；M8w 对 M8sft = 训到工作点的偏好训练到底有没有用。") if HAS_W else (
+            "M8 = 09-21 按溃败反思重训的新臂（新桥 + 参考模型改对的偏好训练 + 你全部机机决定票重组的偏好数据）；M8sft = 同一座新桥、没做偏好训练；M4 = 现役。"
+            "M8 对 M4 = 新臂能不能过现役；M8 对 M8sft = 修正后的偏好训练到底有没有用。")
+html = html.replace("__ARM_NOTE__", ARM_NOTE)
 html = html.replace("__PAYLOAD__", payload).replace("__PRELOAD__", os.environ.get('PRELOAD_CODE', '').strip())
 open(OUT, 'w').write(html)
 print("写出", OUT, len(html), "bytes")

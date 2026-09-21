@@ -19,14 +19,15 @@ plan = ["M8"] * 16 + ["M4"] * 8 + ["备"] * (len(order) - 24)
 HA_PLAN = dict(zip(order, plan))
 # ---- aa 对决预分配：M8vsM4×36（新臂对现役）/ M8vsM8sft×20（修正后的偏好训练对它自己的桥）----
 order2 = sorted(aa_slots, key=lambda s: hashlib.sha256(("v14aa" + s).encode()).hexdigest())
-duels = ["M8vsM4"] * 36 + ["M8vsM8sft"] * 20 + ["备"] * (len(order2) - 56)
+from v14_arms import ARMS, DUEL_A, DUEL_B
+duels = [DUEL_A] * 36 + [DUEL_B] * 20 + ["备"] * (len(order2) - 56)
 AA_PLAN = dict(zip(order2, duels))
 json.dump({"ha": HA_PLAN, "aa": AA_PLAN}, open('v14_slot_proposal.json', 'w'), ensure_ascii=False, indent=1)
 
 out = open('v14_审读稿.txt', 'w'); key = {}; n_c = 0
 for sid in ha_slots + aa_slots:
     kind, idx = sid[:2], int(sid[2:]); src = SRC[kind][idx]
-    items = [(arm, c) for arm in ("M8", "M8sft", "M4") for c in GATED.get(f"{sid}|{arm}", [])]
+    items = [(arm, c) for arm in ARMS for c in GATED.get(f"{sid}|{arm}", [])]
     items.sort(key=lambda x: hashlib.sha256(f"v14blind|{sid}|{x[0]}|{x[1]['seed']}".encode()).hexdigest())
     out.write(f"\n{'='*70}\n## {sid} 《{src['title']}》\n")
     for j, (arm, c) in enumerate(items, 1):

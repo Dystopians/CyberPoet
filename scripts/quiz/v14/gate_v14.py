@@ -53,7 +53,8 @@ def gate(title, b):
 
 stat = collections.Counter()
 gated = collections.defaultdict(list)
-for arm in ("M8", "M8sft", "M4"):
+from v14_arms import ARMS
+for arm in ARMS:
     for l in open(f"v14_cands_{arm}.jsonl"):
         r = json.loads(l)
         b = clean(r["body"], r["title"])
@@ -73,5 +74,5 @@ print(f"过闸组: {len(gated)}（按臂: {dict(cov)}）→ v14_gen_gated.json")
 # 覆盖缺口速报：哪些槽某臂全军覆没
 slots = {k.split("|")[0] for k in gated}
 for sid in sorted(slots, key=lambda s: (s[:2], int(s[2:]))):
-    miss = [a for a in ("M8","M8sft","M4") if f"{sid}|{a}" not in gated]
+    miss = [a for a in ARMS if f"{sid}|{a}" not in gated]
     if miss: print(f"  {sid} 缺臂: {','.join(miss)}")
