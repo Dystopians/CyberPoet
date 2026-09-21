@@ -1,0 +1,63 @@
+### M8 末段预训练（09-21）：起点 = 开发集按篇重算后选定的 pt9 存档（由 run_m8_chain.sh 写入 __PT_START__），数据 = pt10_s3（pt9_s3 剥掉首行题献/副题/题词 20 处），1 轮，lr 2e-5。
+adapter_name_or_path: __PT_START__
+create_new_adapter: false
+model_name_or_path: models/Qwen3-14B
+trust_remote_code: true
+quantization_bit: 4
+quantization_method: bnb   # 09-21：库里的枚举值是 bnb；写 bitsandbytes 不报错、直接不量化（此前 93 份配置全中招）
+quantization_type: nf4
+double_quantization: true
+flash_attn: auto
+enable_liger_kernel: true
+
+stage: pt
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: cyberpoet_pt10_s3
+eval_dataset: cyberpoet_pt5_dev
+template: qwen3_nothink
+cutoff_len: 2048
+packing: true
+preprocessing_num_workers: 24
+dataloader_num_workers: 4
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/pt10_s3
+logging_steps: 5
+save_strategy: steps
+save_steps: 50
+eval_steps: 20
+save_total_limit: 6
+save_only_model: false
+plot_loss: true
+overwrite_output_dir: false
+report_to: none
+run_name: cyberpoet-pt10_s3
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-5
+num_train_epochs: 1.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+weight_decay: 0.01
+max_grad_norm: 1.0
+include_num_input_tokens_seen: true
+seed: 20260825
+data_seed: 20260825
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+load_best_model_at_end: false

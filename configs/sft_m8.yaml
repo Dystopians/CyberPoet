@@ -1,0 +1,65 @@
+### M8 的桥（09-21）：起点 outputs/pt10_s3；数据 = 桥数据 v5（4,329 条：去续写、47 家、标题题面 51%、主人点名 AI 诗 42、剥题献）；开发集 = 200 首从未进过预训练的留出诗；
+### 模板 qwen3 + enable_thinking=false（与推理逐 token 一致）；每 50 步评一次，连续 4 次不降即停，取开发集最优存档。
+model_name_or_path: models/Qwen3-14B
+adapter_name_or_path: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/pt10_s3
+create_new_adapter: false
+trust_remote_code: true
+quantization_bit: 4
+quantization_method: bnb   # 09-21：库里的枚举值是 bnb；写 bitsandbytes 不报错、直接不量化（此前 93 份配置全中招）
+quantization_type: nf4
+double_quantization: true
+flash_attn: auto
+enable_liger_kernel: true
+
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: cyberpoet_sft_v5_train
+eval_dataset: cyberpoet_sft_v5_dev
+template: qwen3
+enable_thinking: false
+cutoff_len: 2048
+packing: false
+train_on_prompt: false
+preprocessing_num_workers: 24
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/sft_m8
+logging_steps: 10
+save_strategy: steps
+save_steps: 50
+eval_steps: 50
+save_total_limit: 3
+save_only_model: false
+metric_for_best_model: eval_loss
+greater_is_better: false
+plot_loss: true
+report_to: none
+run_name: cyberpoet-sft_m8
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-5
+num_train_epochs: 2.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+weight_decay: 0.01
+max_grad_norm: 1.0
+seed: 20260825
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+load_best_model_at_end: true
+early_stopping_steps: 4

@@ -35,11 +35,30 @@
 | `analyze_margins.py` | 汇总打分结果：权重分布、加权长度差 | CPU | 按来源分组，未按反例身份分组 |
 | `degeneracy.py` | 关/开重复罚下的整行复读率 | GPU 10 min/臂 | 48 题只能分辨 20 个百分点；题集 40/48 在 sft_v4 内 |
 | `analyze_gens.py` / `compare_panels.py` | 生成形状统计（字数、字/行、碎行率、标点、重复行） | CPU | 面板数字须标口径 |
-| `merge_bridge.py` | 把 SFT 桥合并成完整权重（参考=桥 DPO 的前置） | CPU 5 min | 合并后 nf4 加载 |
+| `merge_bridge.py` | 把 SFT 桥合并成完整权重（参考=桥 DPO 的前置） | CPU 5 min | 09-21 更正：此前合并后实际是 bf16 加载（量化从未生效）；M8 起才是真 4 位量化加载 |
 | `check_weight_diff.py` | 全参训练中途/段末权重差分（第 3 参数为已轮到层） | CPU 几分钟 | — |
 | `think_block.py` / `rep_penalty.py` | 空 think 块 / 重复罚对生成形状的影响 | GPU 10 min | 48 题非配对；两者共用同一份 rp=1.08 样本 |
-| `quant_mismatch.py` | nf4 训、bf16 推的 dev 损失差 | GPU 5 min | dev 145 条；两臂都带空 think 块，不可与训练日志相减 |
+| `quant_mismatch.py` | 同一个 adapter 挂在 4 位量化底座与 bf16 底座上的 dev 损失差 | GPU 5 min | dev 145 条；两臂都带空 think 块，不可与训练日志相减。09-21 更正：被测 adapter 是 bf16 训的，所以 +0.10 量的是「bf16 训、量化底座推」的代价，不是「量化训、bf16 推」 |
 | `gen_panel_seeds.py` | 指定底座 + adapter + 种子出面板 | GPU 20 min/198 首 | — |
 | `run_epoch_loop_exp.sh` / `run_rca2_card*.sh` | 实验 G 与 09-16 补充实验的串行脚本 | — | 服务器绝对路径 |
 
 另：`dpo/build_dpo_next.py` 从主人票建当代偏好对（真人不做正例、「都不要」不入）；`quiz/gate_v10.py` 候选门控。
+
+## m8/ —— 09-21 重训链（M8）
+
+| 脚本 | 做什么 | 备注 |
+|---|---|---|
+| `build_dpo_v6.py` | 偏好数据 v6：主人机机决定票 + dpo_v1 的 AI 对 AI 票 + 题献最小对；真人诗、裸底座、截断、「两首都差」都不进；按题面留验证集 | 398 对 = 训练 357 / 验证 41 |
+| `build_sft_v5.py` / `poem_head_strip.py` | 桥数据 v5（去续写、47 家、标题题面、剥开头题献/副题/题词）；干净开发集 200 首（从未进过任何训练集）；出卷题先排除 | 4,329 条 |
+| `assemble_pt10_s3.py` | 末段预训练数据（pt9_s3 剥掉 20 处开头题献/副题） | — |
+| `dev_perpoem.py` / `prequantize.py` | 开发集按篇全量重算（定预训练起点）；预量化检查点 | 旧算法只算了 58% |
+| `lf_nowarm.py` | 训练入口：关掉 transformers 的显存预热，共卡时加载峰值从约 28 GB 降到 9.6 GB | — |
+| `run_m8_chain.sh` | 执行器：见缝占卡、断点续训；**两道量化闸**（配置不是 `bnb` 不起跑；日志没有量化那行即停） | 09-21 查明此前 93 份配置写 `bitsandbytes`、量化从未生效 |
+| `run_m8_post.sh` / `m8_select_ckpt.py` | 训后：按训前写死的规则选偏好训练存档（验证损失最低、并列取早、面板字数中位 120–300）→ 面板、复读诊断、v14 候选 | — |
+| `run_m8_m4cands.sh` | M4 的 v14 候选（bf16，单卡不够自动切两卡） | — |
+| `gen_m8.py` | 通用生成：各臂同参；`--nf4` = 按训练时的量化参数推理 | 三颗种子同温度 0.9 |
+| `m8_metrics.py` / `m8_sftdev_nll.py` | 出厂检数字（形状、循环、撞顶）；「合并再量化」丢了多少 | 只报数不做门 |
+
+## quiz/v14/ —— 第十四卷制卷脚本
+
+`assemble_v14_sources.py`（选题）→ `gate_v14.py`（硬门控）→ `propose_v14_slots.py`（**盲读稿**：不显示臂名/质感/预分配）→ `v14_toread.py`（盲读助手：只读会上卷的那几首，否决按匿名编号记，机械处理撞登记表与选集内互重）→ `assemble_v14_haaa.py`（槽内哈希随机取、先选臂轮换）→ `merge_v14.py` → `build_v14_html.py` → `smoke_v14.js` → `register_v14.py`；交卷后 `analyze_v14.py`。09-21 已用假候选全流程空跑通过（含合成结果码判分）。
