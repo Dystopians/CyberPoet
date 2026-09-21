@@ -17,6 +17,13 @@ for k in "$@"; do
     F) base=models/Qwen3-14B; ad=$N/outputs/pt10_s3; arm=RCA8_F_base_pt10_s3;;        # 本次桥的预训练底（pt9_s2 第 50 步 → 量化续训一段）
     G) base=models/Qwen3-14B; ad=$N/outputs/pt9_s2/checkpoint-50; arm=RCA8_G_base_pt9_s2ck50;;
     P72) base=$N/outputs/merged_sft_m8; ad=$N/outputs/dpo_m8/checkpoint-72; arm=RCA8_P72_dpo_on_ck50bridge;;   # 验证票选出的偏好训练存档（建在有问题的桥上）：看偏好训练改不改循环
+    bf16x*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short_bf16/checkpoint-${k#bf16x}; arm=RCA8_X1_bf16train_ck${k#bf16x};;
+    v4x*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short_v4data/checkpoint-${k#v4x}; arm=RCA8_X2_v4data_ck${k#v4x};;
+    bs1x*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short_bs1/checkpoint-${k#bs1x}; arm=RCA8_X3_bs1_ck${k#bs1x};;
+    v5cx*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short_v5c/checkpoint-${k#v5cx}; arm=RCA8_X4_v5c_ck${k#v5cx};;
+    F1_*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_full_oldbase/checkpoint-${k#F1_}; arm=RCA8_F1_oldbase_ck${k#F1_};;
+    F2_*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_full_v4data/checkpoint-${k#F2_}; arm=RCA8_F2_v4data_ck${k#F2_};;
+    F3_*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_full_oldboth/checkpoint-${k#F3_}; arm=RCA8_F3_oldboth_ck${k#F3_};;
     oldbase*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short_oldbase/checkpoint-${k#oldbase}; arm=RCA8_oldbase_short_ck${k#oldbase};;
     short*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_short/checkpoint-${k#short}; arm=RCA8_short_ck${k#short};;  # 短程退火桥各档
     ck*) base=models/Qwen3-14B; ad=$N/outputs/sft_m8_cont/checkpoint-${k#ck}; arm=RCA8_cont_ck${k#ck};;   # 续训各档
