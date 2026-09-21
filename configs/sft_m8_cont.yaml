@@ -1,0 +1,67 @@
+### M8 桥续训（09-21 12:40，归因修复）：干净开发集早停把桥停在第 50 步——那条规则是退化的：留出诗的损失从第一次评估起就单调上升（每 50 步 +0.002），
+### 「最低点」永远是第一次评估，选出来的存档只取决于评估间隔；而它量不到桥真正要学的东西（写完就停、不拿首行当副歌循环）。
+### 面板实测：第 50 步循环 10.6%、第 250 步 15.9%（上一代桥训满 1050 步：0.5–2.0%；量化推理、生成参数、合并再量化三项已逐一排除）。
+### 修复：从第 250 步存档原样续训到 2 轮（同数据、同顺序、同学习率曲线），每 50 步留存档，逐档出面板，取「分布过线的最早一档」；留出诗损失只做护栏（不高出最低点 0.05）。
+model_name_or_path: models/Qwen3-14B
+adapter_name_or_path: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/pt10_s3
+create_new_adapter: false
+trust_remote_code: true
+quantization_bit: 4
+quantization_method: bnb   # 09-21：库里的枚举值是 bnb；写 bitsandbytes 不报错、直接不量化（此前 93 份配置全中招）
+quantization_type: nf4
+double_quantization: true
+flash_attn: auto
+enable_liger_kernel: true
+
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: cyberpoet_sft_v5_train
+eval_dataset: cyberpoet_sft_v5_dev
+template: qwen3
+enable_thinking: false
+cutoff_len: 2048
+packing: false
+train_on_prompt: false
+preprocessing_num_workers: 24
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/sft_m8_cont
+resume_from_checkpoint: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/sft_m8_cont/checkpoint-450
+logging_steps: 10
+save_strategy: steps
+save_steps: 50
+eval_steps: 50
+save_total_limit: 40
+save_only_model: false
+metric_for_best_model: eval_loss
+greater_is_better: false
+plot_loss: true
+report_to: none
+run_name: cyberpoet-sft_m8_cont
+
+per_device_train_batch_size: 8   # 09-21 07:15：原 1×8 累积；诗很短（token 中位 291、最长 1232），一条一条过时 4 位量化的反量化开销占大头（21 秒/步，全程 6.3 小时）。改成 8 条一批、不累积：每步还是同样 8 条、同样的顺序，损失按 token 平均不变，只是快。
+gradient_accumulation_steps: 1
+learning_rate: 2.0e-5
+num_train_epochs: 2.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+weight_decay: 0.01
+max_grad_norm: 1.0
+seed: 20260825
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+load_best_model_at_end: false

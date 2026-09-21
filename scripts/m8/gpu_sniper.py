@@ -5,7 +5,9 @@
 多张卡各挂一个，先占到的写 claim 文件，其余自动退出。最长占 max_hold 秒，绝不长期空占。
 用法: CUDA_VISIBLE_DEVICES=<卡> gpu_sniper.py <卡号> <need_free_MiB> <hold_GiB> <claim_file> <release_file> <max_hold_s>"""
 import sys, os, time, torch
-card, need, hold_gib, claim, rel, max_hold = sys.argv[1], int(sys.argv[2]), float(sys.argv[3]), sys.argv[4], sys.argv[5], int(sys.argv[6])
+card, need, claim, rel, max_hold = sys.argv[1], int(sys.argv[2]), sys.argv[4], sys.argv[5], int(sys.argv[6])
+AUTO = sys.argv[3] == "auto"; hold_gib = None if AUTO else float(sys.argv[3])
+KEEP_FREE = 23400   # auto：占到「空余刚好低于对方起跑线 24000」为止——空卡上约占 24 GiB，有常驻服务的 6 号卡上约占 6 GiB，对方任务同卡在跑时只占几 GiB；给我方下一段留 23 GB
 torch.cuda.init(); torch.zeros(1, device="cuda")
 print(f"[{time.strftime('%H:%M:%S')}] 卡 {card} 预热完成，等空余 ≥{need} MiB", flush=True)
 while True:
@@ -13,6 +15,7 @@ while True:
     if os.path.exists(rel): print("未占到即被释放（我方任务已直接起跑），退出", flush=True); sys.exit(0)
     free = torch.cuda.mem_get_info()[0] // 2**20
     if free >= need:
+        if AUTO: hold_gib = max(0.25, (free - KEEP_FREE) / 1024)
         try:
             x = torch.empty(int(hold_gib * 2**30), dtype=torch.uint8, device="cuda")
         except Exception as e:
@@ -21,7 +24,7 @@ while True:
             fd = os.open(claim, os.O_CREAT | os.O_EXCL | os.O_WRONLY); os.write(fd, card.encode()); os.close(fd)
         except FileExistsError:
             print("同时占到，让给先到的，退出", flush=True); sys.exit(0)
-        print(f"[{time.strftime('%H:%M:%S')}] 卡 {card} 空余 {free} MiB → 已占 {hold_gib} GiB", flush=True)
+        print(f"[{time.strftime('%H:%M:%S')}] 卡 {card} 空余 {free} MiB → 已占 {hold_gib:.1f} GiB", flush=True)
         break
     time.sleep(0.1)
 t0 = time.time()
