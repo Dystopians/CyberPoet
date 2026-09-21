@@ -97,6 +97,12 @@ for r in train:
     if c: r["output"] = o; chg[c] += 1
 random.shuffle(train)
 random.seed(7); random.shuffle(heldout)
+# 09-21 补：留出诗只对预训练隔离还不够——旧的简报/重写行来自 8 月的早期语料，里面有预训练没收、却在桥训练集里的诗（实测 1 首全同、4 首部分重合）。
+# 开发集再过一道：与桥训练集任何一条回答共享 ≥3 个 10 字窗的留出诗不进开发集。训练集不受影响（逐字节不变）。
+SFTW = set()
+for r in train: SFTW |= wins(r["output"])
+_n0 = len(heldout); heldout = [p for p in heldout if len(wins(p["body"]) & SFTW) < 3]
+print(f"留出诗与桥训练集重合而剔出开发集候选: {_n0 - len(heldout)}")
 dev = [{"instruction": f"以《{p['title'].strip()}》为题写一首现代诗。", "input": "", "output": strip_head(p["body"].strip())[0], "system": SYS} for p in heldout[:200]]
 json.dump(train, open(f"{N}/data/sft_train_v5.json", "w"), ensure_ascii=False, indent=1)
 json.dump(dev, open(f"{N}/data/sft_dev_v5.json", "w"), ensure_ascii=False, indent=1)
