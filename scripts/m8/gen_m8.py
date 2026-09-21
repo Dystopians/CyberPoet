@@ -11,7 +11,7 @@ from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 ap = argparse.ArgumentParser(); ap.add_argument("out"); ap.add_argument("base"); ap.add_argument("adapter"); ap.add_argument("titles"); ap.add_argument("arm")
-ap.add_argument("--seeds", default="1400001,1400002,1400003"); ap.add_argument("--rp", type=float, default=1.08); ap.add_argument("--bs", type=int, default=8); ap.add_argument("--temp", type=float, default=0.9); ap.add_argument("--nf4", action="store_true")
+ap.add_argument("--seeds", default="1400001,1400002,1400003"); ap.add_argument("--rp", type=float, default=1.08); ap.add_argument("--bs", type=int, default=8); ap.add_argument("--temp", type=float, default=0.9); ap.add_argument("--nf4", action="store_true"); ap.add_argument("--maxmem", default="")   # --maxmem "25,5" = 各可见卡的权重预算（GiB），不给则按当前空余自动算
 a = ap.parse_args()
 R = Path('/data/peilincai/CyberPoetTraining/cyberpoet_v1')
 SYS = (R / 'prompts/poetry_system_v2.txt').read_text(encoding='utf-8').strip()
@@ -25,7 +25,7 @@ if a.nf4:   # 与 LLaMA-Factory 训练时的量化配置逐项相同（quantizat
     qc = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4", bnb_4bit_quant_storage=torch.bfloat16)
     base = AutoModelForCausalLM.from_pretrained(basep, trust_remote_code=True, torch_dtype=torch.bfloat16, quantization_config=qc, device_map={"": 0}).eval()
 elif ng > 1:
-    mm = {i: f"{max(1, int((torch.cuda.mem_get_info(i)[0] / 2**30) - 2.5))}GiB" for i in range(ng)}
+    mm = {i: f"{g}GiB" for i, g in enumerate(a.maxmem.split(","))} if a.maxmem else {i: f"{max(1, int((torch.cuda.mem_get_info(i)[0] / 2**30) - 2.5))}GiB" for i in range(ng)}
     print("多卡切分 max_memory:", mm, flush=True)
     base = AutoModelForCausalLM.from_pretrained(basep, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto", max_memory=mm).eval()
 else:
