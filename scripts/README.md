@@ -61,4 +61,6 @@
 
 ## quiz/v14/ —— 第十四卷制卷脚本
 
-`assemble_v14_sources.py`（选题）→ `gate_v14.py`（硬门控）→ `propose_v14_slots.py`（**盲读稿**：不显示臂名/质感/预分配）→ `v14_toread.py`（盲读助手：只读会上卷的那几首，否决按匿名编号记，机械处理撞登记表与选集内互重）→ `assemble_v14_haaa.py`（槽内哈希随机取、先选臂轮换）→ `merge_v14.py` → `build_v14_html.py` → `smoke_v14.js` → `register_v14.py`；交卷后 `analyze_v14.py`。09-21 已用假候选全流程空跑通过（含合成结果码判分）。
+`assemble_v14_sources.py`（选题）→ `gate_v14.py`（硬门控）→ `propose_v14_slots.py`（**盲读稿**：不显示臂名/质感/预分配）→ `v14_toread.py`（盲读助手：只读会上卷的那几首，否决按匿名编号记，机械处理撞登记表与选集内互重）→ `assemble_v14_haaa.py`（槽内哈希随机取、先选臂轮换）→ `merge_v14.py` → `build_v14_html.py` → `smoke_v14.js` → `register_v14.py`；交卷后 `analyze_v14.py`（09-22 起头条只报「都不要率」，AI 得票局数降为附注、不再裱框）。`v14_funnel_and_failures.py` 出交付附件：每臂 原始候选→门控→盲读否决→上卷 的漏斗、六类文本模式占比、每臂前三类失败的 AI 原文短摘。09-21 用假候选全流程空跑通过；09-22 正式卷 80 题（ha 24 + aa 56）已交。
+
+`quiz/check_memorization.py`：零记忆核验（10 字窗对训练语料；≥20 窗否决），每臂每卷都扫。

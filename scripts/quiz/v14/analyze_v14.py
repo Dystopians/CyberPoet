@@ -23,6 +23,29 @@ marks = {int(i): v for i, v in d.get("marks", {}).items() if v}
 pairs = json.load(open('v14_pairs_final.json'))
 print(f"署名: {d.get('nick','')} | 表态 {len(picks)}/{len(pairs)}，弃权 {sum(1 for v in picks.values() if v=='X')}，批注 {len(marks)} 条\n")
 
+# ---- 0) 头条：都不要率（主人 09-21：反杀只是对手不强时的相对胜利；头条只报绝对水平）----
+# 口径：每臂在它出场的每一局里，主人选「都不要」的比例（ha 局与 aa 局分开；aa 局一次「都不要」两臂各记一次）。
+# 「对强真人诗」一栏 v14 没有：本卷真人诗都是首次上卷，主人还没在纯人对里评过它们；v15 起先评一批真人诗再设标准局。
+print("头条：都不要率（越低越好；ha 局＝AI 对真人，aa 局＝AI 对 AI）:")
+X = collections.defaultdict(lambda: {"ha": [0, 0], "aa": [0, 0]})
+for i, pk in picks.items():
+    q = pairs[i]
+    if pk not in "ABX": continue
+    for s in "AB":
+        if q[s]["src"] != "ai": continue
+        c = X[q[s]["model"]][q["kind"]]
+        c[1] += 1; c[0] += int(pk == "X")
+tot = {"ha": [0, 0], "aa": [0, 0]}
+for i, pk in picks.items():
+    if pk in "ABX" and pairs[i]["kind"] in tot:
+        tot[pairs[i]["kind"]][1] += 1; tot[pairs[i]["kind"]][0] += int(pk == "X")
+for k in ("ha", "aa"):
+    n = tot[k][1]; print(f"  全卷 {k}: 都不要 {tot[k][0]}/{n} = {tot[k][0]/n:.0%}" if n else f"  全卷 {k}: 无票")
+for m, c in sorted(X.items()):
+    parts = [f"{k} {c[k][0]}/{c[k][1]} = {c[k][0]/c[k][1]:.0%}" for k in ("ha", "aa") if c[k][1]]
+    print(f"  {m}: " + "；".join(parts))
+print("  对强真人诗（标准局）：本卷无。v9–v11 全卷都不要率 25%/55%/52%，先看这一行有没有往下走。\n")
+
 # ---- 1) aa 臂间主判 ----
 duel = collections.defaultdict(lambda: [0, 0])   # (armX, armY) 有序 -> [X胜, 总]
 for i, pk in picks.items():
@@ -57,7 +80,7 @@ for lead, other, cond, label in (("M8","M4",lambda r: r>0.55,"预登记：M8 对
     print(f"  {lead}vs{other}: {w}/{n} = {r:.0%}  {label} → {verdict}")
 
 # ---- 2) 分臂图灵率 ----
-print("\nha 分臂（AI 得票 = 反杀原作，硬通货）:")
+print("\nha 分臂（附注：AI 得票局数。09-21 起不叫硬通货——赢的多半是主人本来就不选的真人写法，见 owner-absolute-level 记录）:")
 byarm = collections.defaultdict(lambda: [0, 0])
 upsets = []
 for i, pk in picks.items():
@@ -70,9 +93,9 @@ for i, pk in picks.items():
         byarm[m][0] += 1
         upsets.append((i, m, q[("B" if ai == "A" else "A")]["author"], q.get("title", "")))
 for m, (w, n) in sorted(byarm.items()):
-    print(f"  {m}: 反杀 {w}/{n} = {w/n:.0%}")
+    print(f"  {m}: AI 得票 {w}/{n} = {w/n:.0%}")
 if upsets:
-    print("  反杀清单（裱框候选，逐首过目后挂 首批过关诗.html）:")
+    print("  AI 得票局（只列不裱框；过关诗册 09-21 起停更）:")
     for i, m, a, t in upsets: print(f"    [{i}] {m} 胜 {a}《{t}》")
 
 # ---- 3) 信号复验（第三次：无装置 p=0.044、长句行 p=0.011 的跨卷续记）----
