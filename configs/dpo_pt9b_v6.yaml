@@ -3,7 +3,7 @@
 model_name_or_path: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/merged_sft_pt9b
 trust_remote_code: true
 quantization_bit: 4
-quantization_method: bitsandbytes
+quantization_method: bnb   # 09-22 改：库只认 bnb；此配置从未跑过
 quantization_type: nf4
 double_quantization: true
 flash_attn: auto

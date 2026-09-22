@@ -19,8 +19,9 @@ plan = ["M8"] * 16 + ["M4"] * 8 + ["备"] * (len(order) - 24)
 HA_PLAN = dict(zip(order, plan))
 # ---- aa 对决预分配：M8vsM4×36（新臂对现役）/ M8vsM8sft×20（修正后的偏好训练对它自己的桥）----
 order2 = sorted(aa_slots, key=lambda s: hashlib.sha256(("v14aa" + s).encode()).hexdigest())
-from v14_arms import ARMS, DUEL_A, DUEL_B
-duels = [DUEL_A] * 36 + [DUEL_B] * 20 + ["备"] * (len(order2) - 56)
+from v14_arms import ARMS, DUEL_A, DUEL_B, DUEL_C
+_fixed = [DUEL_A] * 36 + [DUEL_B] * 20 + ([DUEL_C] * 20 if DUEL_C else [])
+duels = _fixed + ["备"] * (len(order2) - len(_fixed))
 AA_PLAN = dict(zip(order2, duels))
 json.dump({"ha": HA_PLAN, "aa": AA_PLAN}, open('v14_slot_proposal.json', 'w'), ensure_ascii=False, indent=1)
 

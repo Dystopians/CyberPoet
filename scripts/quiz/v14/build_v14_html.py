@@ -10,9 +10,9 @@ from v5_lib import tags, norm, chars, DIMK
 
 pairs = json.load(open('v14_pairs_final.json'))
 words = {}
-assert 56 <= len(pairs) <= 80, len(pairs)   # v14
+assert 56 <= len(pairs) <= 100, len(pairs)   # v14（09-22 加第四臂后上限 100）
 kinds = collections.Counter(p["kind"] for p in pairs)
-assert kinds["hh"] == 0 and 18 <= kinds["ha"] <= 24 and 36 <= kinds["aa"] <= 56, kinds  # v14
+assert kinds["hh"] == 0 and 18 <= kinds["ha"] <= 24 and 36 <= kinds["aa"] <= 76, kinds  # v14（09-22：三种对决 36+20+20）
 
 # ---- 固定检查（规范 1/2/6/8/9）----
 allk = collections.Counter(norm(p[s]["body"]) for p in pairs for s in "AB")
@@ -25,8 +25,8 @@ for i, p in enumerate(pairs):
 ha_pos = collections.Counter("A" if p["A"]["src"] == "human" else "B" for p in pairs if p["kind"] == "ha")
 assert abs(ha_pos["A"] - ha_pos["B"]) <= 2, f"真伪题侧位失衡 {dict(ha_pos)}"
 import collections as _cc
-from v14_arms import DUEL_A, DUEL_B, HAS_W
-for duel in (DUEL_A, DUEL_B):
+from v14_arms import DUEL_A, DUEL_B, DUEL_C, HAS_W, HAS_N
+for duel in [d for d in (DUEL_A, DUEL_B, DUEL_C) if d]:
     rows = [p for p in pairs if p.get("duel") == duel]
     a1 = duel.split("vs")[0] + "_dpo"
     lead = sum(1 for p in rows if p["A"].get("model") == a1)
@@ -348,6 +348,7 @@ ARM_NOTE = ("M8 = 09-21 按溃败反思重训的新臂（新桥 + 参考模型�
             "M8 对 M4 = 新臂能不能过现役；M8w 对 M8sft = 训到工作点的偏好训练到底有没有用。") if HAS_W else (
             "M8 = 09-21 按溃败反思重训的新臂（新桥 + 参考模型改对的偏好训练 + 你全部机机决定票重组的偏好数据）；M8sft = 同一座新桥、没做偏好训练；M4 = 现役。"
             "M8 对 M4 = 新臂能不能过现役；M8 对 M8sft = 修正后的偏好训练到底有没有用。")
+if HAS_N: ARM_NOTE += "M8n = 同一座桥、同样的偏好训练，只把偏好数据里 v1 时代（早期弱模型）的对去掉——外部评审提出的消融；M8 对 M8n = 旧正例该不该留。"
 html = html.replace("__ARM_NOTE__", ARM_NOTE)
 html = html.replace("__PAYLOAD__", payload).replace("__PRELOAD__", os.environ.get('PRELOAD_CODE', '').strip())
 open(OUT, 'w').write(html)

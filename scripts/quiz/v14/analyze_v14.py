@@ -2,7 +2,7 @@
 # DPO 金标行 + 反杀裱框候选 + 批注辑录。用法: python3 analyze_v14.py <码或文件>
 import json, sys, base64, math, collections, re
 from v5_lib import tags, norm
-from v14_arms import LEAD_B
+from v14_arms import LEAD_B, DUEL_C
 # 分点检测（与 panel.py SECT2 同式；不 import panel——它顶层会吃 argv 当 jsonl 跑面板）
 SECT2 = re.compile(r"(?:^|\n)\s*(?:[0-9]+[\.、．]?|[（(][一二三四五六七八九十][)）]|[一二三四五六七八九十][、.])\s*(?:\n|$)")
 
@@ -49,10 +49,10 @@ def duel_stat(lead, other):
     return w, n
 print("\n预登记对账（判决只认票；预测只用于事后归因）:")
 for lead, other, cond, label in (("M8","M4",lambda r: r>0.55,"预登记：M8 对现役 >55%（低于 45% 记负，45–55% 记均衡；36 局里若一半弃权，决定票约 18，检验力不足，只记不判）"),
-                                 (LEAD_B,"M8sft",lambda r: r>0.55,"预登记：修正后的偏好训练对自己的桥 >55%（同上口径）")):
+                                 (LEAD_B,"M8sft",lambda r: r>0.55,"预登记：修正后的偏好训练对自己的桥 >55%（同上口径）")) + ((("M8","M8n",lambda r: True,"不预测：去掉 v1 时代对的消融，只记不判"),) if DUEL_C else ()):
     w, n = duel_stat(lead, other)
     r = w / n if n else 0
-    verdict = "无票" if not n else ("均衡（45–55%）" if 0.45 <= r <= 0.55 else ("命中" if cond(r) else ("记负（<45%）" if r < 0.45 else "未命中")))
+    verdict = "无票" if not n else ("已记录（不预测）" if label.startswith("不预测") else ("均衡（45–55%）" if 0.45 <= r <= 0.55 else ("命中" if cond(r) else ("记负（<45%）" if r < 0.45 else "未命中"))))
     if n and n < 30: verdict += f"——决定票 {n} <30，只记不判"
     print(f"  {lead}vs{other}: {w}/{n} = {r:.0%}  {label} → {verdict}")
 
