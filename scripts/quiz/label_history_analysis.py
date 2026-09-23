@@ -13,9 +13,10 @@ def picks3(lf):
     d = json.load(open(lf)); return {r["i"]: r.get("choice") for r in d["labels"]}, {r["i"]: r.get("remark", "") for r in d["labels"] if r.get("remark")}
 SETS = [("v3", "pairs_final.json", picks3), ("v5", "v5_pairs_final.json", picks56), ("v6", "v6_pairs_final.json", picks56),
         ("v7", "v7_pairs_final.json", picks56), ("v7.5", "v75_hh_fixed.json", picks56), ("v8", "v8_pairs_final.json", picks56),
-        ("v9", "v9_pairs_final.json", picks56), ("v10b", "v10b_pairs_final.json", picks56), ("v11", "v11_pairs_final.json", picks56), ("v12", "v12_pairs_final.json", picks56)]
+        ("v9", "v9_pairs_final.json", picks56), ("v10b", "v10b_pairs_final.json", picks56), ("v11", "v11_pairs_final.json", picks56), ("v12", "v12_pairs_final.json", picks56),
+        ("v13", "v13_pairs_final.json", picks56), ("v14", "v14_pairs_final.json", picks56)]
 LF = {"v3": "labels_owner_v3.json", "v5": "labels_owner_v5.json", "v6": "labels_owner_v6.json", "v7": "labels_owner_v7.json", "v7.5": "labels_owner_v75.json",
-      "v8": "labels_owner_v8.json", "v9": "labels_owner_v9.json", "v10b": "labels_owner_v10b.json", "v11": "labels_owner_v11.json", "v12": "labels_owner_v12.json"}
+      "v8": "labels_owner_v8.json", "v9": "labels_owner_v9.json", "v10b": "labels_owner_v10b.json", "v11": "labels_owner_v11.json", "v12": "labels_owner_v12.json", "v13": "labels_owner_v13.json", "v14": "labels_owner_v14.json"}
 rows = []
 for name, pf, fn in SETS:
     pairs = json.load(open(Q + pf)); picks, marks = fn(Q + LF[name])
@@ -129,7 +130,7 @@ def paired(kind_filter, label):
     for x in res[:12]: print(f"  {x['label']:14s} {x['winner_higher']:3d} : {x['winner_lower']:3d}  p={x['p']:.3f}  中位差 {x['median_diff']:+.2f}")
     return res
 out["aa_paired"] = paired(lambda r: r["kind"] == "aa", "三、机机局（含 v1 时代）")
-out["aa_paired_quiz"] = paired(lambda r: r["kind"] == "aa" and r["set"] != "v1", "三b、机机局（只算测验卷 v3–v12）")
+out["aa_paired_quiz"] = paired(lambda r: r["kind"] == "aa" and r["set"] != "v1", "三b、机机局（只算测验卷 v3–v14）")
 out["hh_paired"] = paired(lambda r: r["kind"] == "hh", "四、纯人对（主人的纯口味，无机器混杂）")
 out["ha_paired"] = paired(lambda r: r["kind"] == "ha", "五、真伪局（胜者−败者，多数胜者是人）")
 
@@ -174,7 +175,7 @@ for m in marks_all:
         if any(w in text for w in ws):
             byset[st][k] += 1
             for arm in re.findall(r"AI·([A-Za-z0-9_]+)", who): byarm_kw[arm][k] += 1
-sets_order = ["v5", "v6", "v7", "v8", "v9", "v10b", "v11", "v12"]
+sets_order = ["v5", "v6", "v7", "v8", "v9", "v10b", "v11", "v12", "v13", "v14"]
 print("  词根 | " + " | ".join(sets_order))
 for k in KW: print(f"  {k:10s} | " + " | ".join(str(byset[s][k]) for s in sets_order))
 print("  词根 × 臂（批注提到该臂在场的局）:")
@@ -184,7 +185,7 @@ out["marks_by_set"] = {s: dict(byset[s]) for s in sets_order}; out["marks_by_arm
 # ---------- 九、时间线：按卷的反杀率、都不要率、M4 战绩 ----------
 print("\n== 九、按卷时间线 ==")
 tl = []
-for name in ["v3", "v5", "v6", "v7", "v8", "v9", "v10b", "v11", "v12"]:
+for name in ["v3", "v5", "v6", "v7", "v8", "v9", "v10b", "v11", "v12", "v13", "v14"]:
     rs = [r for r in rows if r["set"] == name]
     ha = [r for r in rs if r["kind"] == "ha"]; aa = [r for r in rs if r["kind"] == "aa"]
     up = sum(1 for r in ha if r["pick"] in "AB" and r[r["pick"]]["src"] == "ai"); hd = sum(1 for r in ha if r["pick"] in "AB")

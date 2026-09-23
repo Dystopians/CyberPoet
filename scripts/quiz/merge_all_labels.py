@@ -27,7 +27,8 @@ SETS = [("v3", "pairs_final.json", picks3("labels_owner_v3.json")),
         ("v9", "v9_pairs_final.json", picks56("labels_owner_v9.json")),
         ("v10b", "v10b_pairs_final.json", picks56("labels_owner_v10b.json")),
         ("v11", "v11_pairs_final.json", picks56("labels_owner_v11.json")),
-        ("v12", "v12_pairs_final.json", picks56("labels_owner_v12.json"))]
+        ("v12", "v12_pairs_final.json", picks56("labels_owner_v12.json")),
+        ("v13", "v13_pairs_final.json", picks56("labels_owner_v13.json")), ("v14", "v14_pairs_final.json", picks56("labels_owner_v14.json"))]
 
 DIMS = [("device","有装置","无装置"),("linelen","长句行","短句行"),("punct","满标点","无标点"),
         ("density","密","疏"),("ending","悬置","落地"),("simile","有喻","无喻"),
