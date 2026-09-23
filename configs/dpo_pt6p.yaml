@@ -1,0 +1,49 @@
+# 实验 2「pt6+散文」（09-22 主人批准）：M4 的配方一字不改（7 轮 + 退火 + sft_v3 桥 + dpo_v1 参考=裸底座 + 模板 qwen3_nothink），只把 pt9 的 301 篇散文（123 万字）加进预训练。
+# 量化键已删：M4 当年那些键从未生效（枚举写错），实际就是 bf16 LoRA，这里如实写成 bf16（需 ≥35 GB 空卡）。派生自 dpo_pt6.yaml。
+### DPO 首跑：主人 290 对盲标（全历史可恢复题面者），β=0.1，在 SFT 桥 v3 之上续训同一 adapter
+model_name_or_path: models/Qwen3-14B
+adapter_name_or_path: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/sft_pt6p
+create_new_adapter: false
+trust_remote_code: true
+flash_attn: auto
+
+stage: dpo
+pref_beta: 0.1
+pref_loss: sigmoid
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: cyberpoet_dpo
+template: qwen3_nothink
+cutoff_len: 2048
+preprocessing_num_workers: 24
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/dpo_pt6p
+logging_steps: 5
+save_strategy: epoch
+save_total_limit: 3
+save_only_model: true
+plot_loss: true
+report_to: none
+run_name: cyberpoet-dpo-pt6p
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-6
+num_train_epochs: 3.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+max_grad_norm: 1.0
+seed: 20260825

@@ -1,0 +1,57 @@
+# 实验 2「pt6+散文」（09-22 主人批准）：M4 的配方一字不改（7 轮 + 退火 + sft_v3 桥 + dpo_v1 参考=裸底座 + 模板 qwen3_nothink），只把 pt9 的 301 篇散文（123 万字）加进预训练。
+# 量化键已删：M4 当年那些键从未生效（枚举写错），实际就是 bf16 LoRA，这里如实写成 bf16（需 ≥35 GB 空卡）。派生自 pt6_full.yaml。
+### 语料v5（已清洗：审计剔除+洛夫分节修复）继续预训练 · rank 32 · 配方承袭 pt3_r32
+model_name_or_path: models/Qwen3-14B
+trust_remote_code: true
+flash_attn: auto
+
+stage: pt
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+dataset_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/data
+dataset: cyberpoet_pt6p_full
+eval_dataset: cyberpoet_pt5_dev
+template: qwen3_nothink
+cutoff_len: 2048
+packing: true
+preprocessing_num_workers: 24
+dataloader_num_workers: 4
+overwrite_cache: true
+
+output_dir: /data/peilincai/CyberPoetTraining/claude_night_20260827/outputs/pt6p_r32
+logging_steps: 5
+save_strategy: epoch
+eval_steps: 20
+save_total_limit: 8
+save_only_model: true
+plot_loss: true
+overwrite_output_dir: false
+report_to: none
+run_name: cyberpoet-pt6p-full
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-5
+num_train_epochs: 7.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+tf32: true
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+optim: paged_adamw_8bit
+weight_decay: 0.01
+max_grad_norm: 1.0
+include_num_input_tokens_seen: true
+seed: 20260825
+data_seed: 20260825
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+load_best_model_at_end: false
