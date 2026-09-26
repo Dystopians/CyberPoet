@@ -8,7 +8,7 @@ N=/data/peilincai/CyberPoetTraining/claude_night_20260827; PYV=/data/peilincai/C
 SNIPE_DIR=$N/logs/snipe; mkdir -p $SNIPE_DIR
 # 候选卡与触发线（MiB，torch 口径的空余）：6 号卡（常驻服务 18.8 GB）与 3 号卡（07:40 起无常驻任务）。
 # 5 号卡不用：那张卡常驻服务占 22.7 GB，对方任务装载瞬间冲到过 47.2 GB（06:34 实测只剩 1.3 GB），我方哪怕 0.5 GB 的预热上下文都可能成为压垮它的那一根；4 号卡更贴线。
-declare -A SNIPE_NEED=( [4]=23900 [3]=23900 )   # 09-21 11:45：4 号卡只剩对方一个任务 + 1.4 GB 小任务（空余约 27 GB），3 号卡空余约 21 GB；6 号卡此刻只剩 4.9 GB，连 0.5 GB 的预热上下文都不放
+declare -A SNIPE_NEED=( [4]=23900 [3]=23900 [6]=23900 [7]=23900 [1]=23900 [2]=23900 [0]=23900 )   # 09-21 21:40：4 号卡刚空出 25 GB（F2 已停）；09-22 20:35 加 7 号卡（常驻 26.8 GB，空 21.7 GB 落在直接起跑带）
 DIRECT_NEED=21000                      # 空余在 [21000, 23900) 之间：对方起不来（<24000），我方够用（每段 ≤17 GB，留 4 GB 余量）→ 不必占位，直接起跑
 snipe_seq(){ n=$(cat $SNIPE_DIR/seq 2>/dev/null || echo 0); n=$((n+1)); echo $n > $SNIPE_DIR/seq; echo $n; }
 snipe_alive(){ pgrep -f "gpu_snipe[r].py [0-9]+ [0-9]+ [a-z0-9.]+ $SNIPE_DIR/$1.claim" >/dev/null; }
